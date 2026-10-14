@@ -1,0 +1,68 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+        skipDefaultCheckout(true)
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Check Tools') {
+            steps {
+                bat 'node --version'
+                bat 'npm --version'
+                bat 'docker --version'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir('app') {
+                    bat 'npm install'
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                dir('app') {
+                    bat 'npm test'
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                bat 'docker build -t devops-ecommerce:latest app'
+            }
+        }
+
+        stage('Verify Docker Image') {
+            steps {
+                bat 'docker image inspect devops-ecommerce:latest'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'SUCCESS: CI pipeline completed.'
+            echo 'Tests passed and the Docker image was built.'
+        }
+
+        failure {
+            echo 'FAILURE: CI pipeline failed. Review the stage logs.'
+        }
+
+        always {
+            echo 'Week 12 CI pipeline execution finished.'
+        }
+    }
+}
